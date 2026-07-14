@@ -180,6 +180,23 @@ main {
     overflow: hidden;
 }
 
+.gps-marker {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 2px solid #fff;
+    box-shadow: 0 1px 5px rgba(0, 0, 0, 0.4);
+}
+
+.user-location-marker {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #2b6cff;
+    border: 2px solid #fff;
+    box-shadow: 0 0 0 4px rgba(43, 108, 255, 0.2);
+}
+
 /* Loading spinner */
 .spinner {
     display: inline-block;
