@@ -8,7 +8,6 @@ const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(express.static('public'));
-app.use('/vendor', express.static(path.join(__dirname, 'node_modules')));
 app.use(express.json());
 
 // Initialize Google Sheets API
