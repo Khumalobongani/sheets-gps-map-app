@@ -1,24 +1,27 @@
 let map;
 let markers = [];
-let infoWindows = [];
+let userMarker;
 
 /**
- * Initialize Google Map
+ * Initialize MapLibre map
  */
 function initMap() {
-    const defaultCenter = { lat: 37.7749, lng: -122.4194 }; // San Francisco
+    const defaultCenter = [ -122.4194, 37.7749 ]; // San Francisco [lng, lat]
 
-    map = new google.maps.Map(document.getElementById('map'), {
-        zoom: 12,
+    map = new maplibregl.Map({
+        container: 'map',
+        style: 'https://demotiles.maplibre.org/style.json',
         center: defaultCenter,
-        mapTypeControl: true,
-        fullscreenControl: true,
-        streetViewControl: true,
-        mapTypeId: google.maps.MapTypeId.ROADMAP,
+        zoom: 12,
     });
 
-    console.log('Map initialized');
-    loadLocations();
+    map.addControl(new maplibregl.NavigationControl(), 'top-right');
+
+    map.on('load', () => {
+        console.log('Map initialized');
+        loadLocations();
+        requestCurrentLocation();
+    });
 }
 
 /**
@@ -47,10 +50,8 @@ async function loadLocations() {
  */
 function displayLocations(locations) {
     // Clear existing markers
-    markers.forEach(marker => marker.setMap(null));
+    markers.forEach(marker => marker.remove());
     markers = [];
-    infoWindows.forEach(infoWindow => infoWindow.close());
-    infoWindows = [];
 
     if (locations.length === 0) {
         showError('No valid locations found in Google Sheets');
@@ -59,34 +60,26 @@ function displayLocations(locations) {
 
     // Create markers for each location
     locations.forEach((location, index) => {
-        const marker = new google.maps.Marker({
-            position: { lat: location.latitude, lng: location.longitude },
-            map: map,
-            title: `Location ${index + 1}`,
-            icon: getMarkerIcon(index),
-        });
+        const markerElement = document.createElement('div');
+        markerElement.className = 'gps-marker';
+        markerElement.style.backgroundColor = getMarkerColor(index);
 
-        // Create info window
-        const infoWindow = new google.maps.InfoWindow({
-            content: `
-                <div class="info-window">
-                    <h3>Location ${index + 1}</h3>
-                    <p><strong>Latitude:</strong> ${location.latitude.toFixed(6)}</p>
-                    <p><strong>Longitude:</strong> ${location.longitude.toFixed(6)}</p>
-                    <p><strong>Timestamp:</strong> ${location.timestamp}</p>
-                    <p><strong>Satellite:</strong> ${location.satellite}</p>
-                </div>
-            `,
-        });
+        const popup = new maplibregl.Popup({ offset: 25 }).setHTML(`
+            <div class="info-window">
+                <h3>Location ${index + 1}</h3>
+                <p><strong>Latitude:</strong> ${location.latitude.toFixed(6)}</p>
+                <p><strong>Longitude:</strong> ${location.longitude.toFixed(6)}</p>
+                <p><strong>Timestamp:</strong> ${location.timestamp}</p>
+                <p><strong>Satellite:</strong> ${location.satellite}</p>
+            </div>
+        `);
 
-        marker.addListener('click', () => {
-            // Close all other info windows
-            infoWindows.forEach(iw => iw.close());
-            infoWindow.open(map, marker);
-        });
+        const marker = new maplibregl.Marker({ element: markerElement })
+            .setLngLat([location.longitude, location.latitude])
+            .setPopup(popup)
+            .addTo(map);
 
         markers.push(marker);
-        infoWindows.push(infoWindow);
     });
 
     // Fit map bounds to all markers
@@ -95,40 +88,61 @@ function displayLocations(locations) {
 }
 
 /**
+ * Request and display current user location on map
+ */
+function requestCurrentLocation() {
+    if (!navigator.geolocation) {
+        console.warn('Geolocation is not supported by this browser.');
+        return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+        ({ coords }) => {
+            const currentLngLat = [coords.longitude, coords.latitude];
+
+            if (!userMarker) {
+                const userElement = document.createElement('div');
+                userElement.className = 'user-location-marker';
+
+                userMarker = new maplibregl.Marker({ element: userElement })
+                    .setLngLat(currentLngLat)
+                    .setPopup(new maplibregl.Popup({ offset: 20 }).setText('Your current location'))
+                    .addTo(map);
+            } else {
+                userMarker.setLngLat(currentLngLat);
+            }
+        },
+        (error) => {
+            console.warn('Unable to get current location:', error.message);
+        },
+        {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 60000,
+        }
+    );
+}
+
+/**
  * Fit map view to show all markers
  */
 function fitMapToBounds() {
     if (markers.length === 0) return;
 
-    const bounds = new google.maps.LatLngBounds();
+    const bounds = new maplibregl.LngLatBounds();
     markers.forEach(marker => {
-        bounds.extend(marker.getPosition());
+        bounds.extend(marker.getLngLat());
     });
 
-    map.fitBounds(bounds);
-
-    // Add padding to bounds
-    const listener = map.addListener('idle', () => {
-        map.fitBounds(bounds);
-        google.maps.event.removeListener(listener);
-    });
+    map.fitBounds(bounds, { padding: 60, maxZoom: 15 });
 }
 
 /**
- * Get marker icon color based on index
+ * Get marker color based on index
  */
-function getMarkerIcon(index) {
+function getMarkerColor(index) {
     const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8', '#F7DC6F'];
-    const color = colors[index % colors.length];
-
-    return {
-        path: google.maps.SymbolPath.CIRCLE,
-        scale: 8,
-        fillColor: color,
-        fillOpacity: 1,
-        strokeColor: '#fff',
-        strokeWeight: 2,
-    };
+    return colors[index % colors.length];
 }
 
 /**
@@ -153,10 +167,11 @@ function updateUI(locations) {
         `;
 
         li.addEventListener('click', () => {
-            // Pan to marker and open info window
-            map.setCenter(markers[index].getPosition());
-            map.setZoom(15);
-            markers[index].click();
+            map.easeTo({
+                center: [location.longitude, location.latitude],
+                zoom: 15,
+            });
+            markers[index].togglePopup();
         });
 
         locationsList.appendChild(li);
@@ -187,6 +202,7 @@ function hideError() {
 document.getElementById('refresh-btn').addEventListener('click', () => {
     console.log('Refreshing data...');
     loadLocations();
+    requestCurrentLocation();
 });
 
 document.getElementById('center-map-btn').addEventListener('click', () => {

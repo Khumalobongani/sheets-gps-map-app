@@ -1,16 +1,17 @@
-# 📍 GPS Tracker - Google Sheets to Map
+# 📍 GPS Tracker - Google Sheets to MapLibre
 
-A web application that pulls GPS coordinates and sensor data from Google Sheets and displays them on an interactive Google Map.
+A web application that pulls GPS coordinates and sensor data from Google Sheets and displays them on an interactive MapLibre map.
 
 ## Features
 
-- 🗺️ **Interactive Google Map** with marker display
+- 🗺️ **Interactive MapLibre map** with marker display
 - 📊 **Real-time data** from Google Sheets
 - 🎯 **Location sidebar** with clickable list
 - 🔄 **Refresh functionality** to update data
 - 📱 **Responsive design** for mobile and desktop
 - 🛰️ **Satellite info** display on markers
 - ⏰ **Timestamp tracking**
+- 📍 **Current device location** display using browser geolocation
 
 ## Prerequisites
 
@@ -18,7 +19,6 @@ Before you start, you'll need:
 
 1. **Google Cloud Project** with:
    - Google Sheets API enabled
-   - Google Maps API enabled
    - Service Account with JSON credentials
 
 2. **Google Sheets** formatted with columns:
@@ -28,6 +28,8 @@ Before you start, you'll need:
    - `Satellite` (or other metadata)
 
 3. **Node.js** (v14+) and npm
+
+> This repository is an Express + browser JavaScript web app (not React Native/Expo), so no Android/iOS native build setup is required.
 
 ## Setup Instructions
 
@@ -39,10 +41,7 @@ Before you start, you'll need:
    - Navigate to APIs & Services → Library
    - Search for "Google Sheets API"
    - Click Enable
-4. Enable **Google Maps API**:
-   - Search for "Maps JavaScript API"
-   - Click Enable
-5. Create a Service Account:
+4. Create a Service Account:
    - Go to APIs & Services → Credentials
    - Click "Create Credentials" → Service Account
    - Fill in the details
@@ -50,11 +49,6 @@ Before you start, you'll need:
    - Go to the service account → Keys tab
    - Add a new JSON key
    - Download and save as `credentials.json` in project root
-6. Get your **Google Maps API Key**:
-   - Go to Credentials
-   - Create a new API Key
-   - Restrict to Google Maps JavaScript API
-
 ### 2. Set Up Google Sheets
 
 1. Create a new Google Sheet
@@ -79,12 +73,10 @@ Before you start, you'll need:
    GOOGLE_SHEETS_API_KEY=<path to credentials.json or JSON content>
    SPREADSHEET_ID=<your sheet id>
    SHEET_NAME=Sheet1
-   GOOGLE_MAPS_API_KEY=<your maps api key>
    PORT=3000
    ```
 
-3. Update `public/index.html`:
-   - Replace `YOUR_GOOGLE_MAPS_API_KEY_HERE` with your actual Google Maps API key
+   Map rendering uses the default MapLibre demo style, so **no map API key is required** for basic functionality.
 
 ### 4. Install Dependencies
 
@@ -153,6 +145,7 @@ Health check endpoint.
 3. **Click Locations List**: Pan to location and show info
 4. **Refresh Data**: Click "🔄 Refresh Data" to pull latest from Sheets
 5. **Center Map**: Click "🎯 Center Map" to fit all markers
+6. **Current Location**: Browser permission is requested to show your device location on the map
 
 ## Troubleshooting
 
@@ -167,9 +160,8 @@ Health check endpoint.
 - Check that latitude/longitude values are valid numbers
 
 ### Map not loading
-- Verify `GOOGLE_MAPS_API_KEY` is correct in `public/index.html`
-- Check that Google Maps API is enabled in Cloud Console
-- Ensure API key restrictions allow Maps JavaScript API
+- Ensure dependencies are installed (`npm install`)
+- Verify outbound access to `https://demotiles.maplibre.org/style.json` for the default style
 
 ### CORS Issues
 - This shouldn't occur as the backend serves the frontend
