@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GPS Locations from Google Sheets</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY_HERE"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📍 GPS Tracker</h1>
+            <p>Displaying locations from Google Sheets</p>
+        </header>
+
+        <main>
+            <div class="sidebar">
+                <div class="controls">
+                    <button id="refresh-btn" class="btn btn-primary">🔄 Refresh Data</button>
+                    <button id="center-map-btn" class="btn btn-secondary">🎯 Center Map</button>
+                </div>
+
+                <div class="stats">
+                    <p><strong>Total Locations:</strong> <span id="location-count">0</span></p>
+                    <p><strong>Last Updated:</strong> <span id="last-updated">Never</span></p>
+                </div>
+
+                <div class="locations-list">
+                    <h3>Locations</h3>
+                    <ul id="locations-ul">
+                        <li class="placeholder">Loading locations...</li>
+                    </ul>
+                </div>
+
+                <div class="error" id="error-container" style="display: none;">
+                    <p id="error-message"></p>
+                </div>
+            </div>
+
+            <div id="map"></div>
+        </main>
+    </div>
+
+    <script src="map.js"></script>
+</body>
+</html>
